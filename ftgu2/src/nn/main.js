@@ -1,6 +1,6 @@
-import Tensor from './nn/core/Tensor.js';
-import DenseLayer from './nn/layers/DenseLayer.js';
-import Sigmoid from './nn/activations/Sigmoid.js';
+import Tensor from './core/Tensor.js';
+import DenseLayer from './layers/DenseLayer.js';
+import Sigmoid from './activations/Sigmoid.js';
 
 // Create a 3x1 input tensor (column vector) to match DenseLayer(3, 2)
 const input = new Tensor([
