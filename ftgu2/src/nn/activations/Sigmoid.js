@@ -60,4 +60,17 @@ export default class Sigmoid extends Activation {
         return new Tensor(gradInputData)
     }
 
+    toGraph(idPrefix = "sigmoid") {
+        const layerId = idPrefix; // use provided prefix exactly (Network expects this)
+ 
+        const nodes = [];
+        const links = [];
+
+        // TODO: the issue here is we have no access to W so we can't get the input/output Size
+        const inputSize = this.W.data[0].length;
+        const outputSize = this.W.data.length;
+
+        return { nodes, links }
+    }
+
 }

@@ -5,6 +5,8 @@ import * as d3 from "d3";
 const Graph = ({ nodes = [], links = [], nodeRadius = 12 }) => {
   const svgRef = useRef(null);
 
+  const LINK_OFFSET = 10;
+
   useEffect(() => {
     const svg = d3.select(svgRef.current);
     const width = svgRef.current.clientWidth;
@@ -23,6 +25,18 @@ const Graph = ({ nodes = [], links = [], nodeRadius = 12 }) => {
       .data(links)
       .join("line")
       .attr("stroke-width", 2);
+
+    const linkLabelGroup = g.append("g")
+      .attr("class", "link-labels")
+      .attr("font-size", 12)
+      .attr("fill", "#333");
+
+    const linkLabelElements = linkLabelGroup
+      .selectAll("text")
+      .data(links)
+      .join("text")
+      .text(d => d.weight !== undefined ? d.weight.toFixed(3) : "")
+      .attr("text-anchor", "middle");
 
     const nodeElements = nodeGroup
       .selectAll("circle")
@@ -94,6 +108,10 @@ const Graph = ({ nodes = [], links = [], nodeRadius = 12 }) => {
         nodeElements
           .attr("cx", d => d.x)
           .attr("cy", d => d.y);
+
+        linkLabelElements
+          .attr("x", (d, i) => (d.source.x + d.target.x) / 2 - 5 + (i % 3) * LINK_OFFSET)
+          .attr("y", (d, i) => (d.source.y + d.target.y) / 2 - 5 - (i % 3) * LINK_OFFSET);
       });
 
     // drag behavior

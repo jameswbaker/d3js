@@ -6,18 +6,10 @@ import Sigmoid from './nn/activations/Sigmoid.js';
 
 function App() {
 
-  // const [net] = useState(() => {
-  //   return new Network([
-  //     new DenseLayer(3, 1),
-  //   ]);
-  // });
-
-  // const { nodes, links } = net.toGraph();
-
   const [net] = useState(() => {
     return new Network([
-      new DenseLayer(3, 1),
-      // new Sigmoid()
+      new DenseLayer(3,1),
+      new Sigmoid()
     ]);
   })
 
