@@ -85,4 +85,67 @@ export default class DenseLayer extends Layer {
     getGrads() {
         return [this.dW, this.db];
     }
+
+    toGraph(idPrefix = "dense") {
+        const layerId = idPrefix; // use provided prefix exactly (Network expects this)
+ 
+        const nodes = [];
+        const links = [];
+
+        const inputSize = this.W.data[0].length;
+        const outputSize = this.W.data.length;
+
+        // Layer representative node (so Network can link layers by idPrefix)
+        // nodes.push({
+        //     id: layerId,
+        //     type: "layer",
+        //     label: `Dense ${inputSize}→${outputSize}`,
+        //     color: "#666"
+        // });
+
+        // Create input neuron nodes
+        const inputIds = [];
+        for (let i = 0; i < inputSize; i++) {
+            const nid = `${layerId}:in:${i}`;
+            inputIds.push(nid);
+            nodes.push({
+                id: nid,
+                type: "input",
+                layer: layerId,
+                label: `in${i}`,
+                color: "#1f77b4"
+            });
+        }
+
+        // Create output neuron nodes
+        const outputIds = [];
+        for (let j = 0; j < outputSize; j++) {
+            const nid = `${layerId}:out:${j}`;
+            outputIds.push(nid);
+            nodes.push({
+                id: nid,
+                type: "output",
+                layer: layerId,
+                label: `out${j}`,
+                color: "#ff7f0e"
+            });
+        }
+
+        // Create weight edges from each input neuron to each output neuron
+        // include weight value for possible visual encoding
+        const W = this.W.data;
+        for (let j = 0; j < outputSize; j++) {
+            for (let i = 0; i < inputSize; i++) {
+                links.push({
+                    source: inputIds[i],
+                    target: outputIds[j],
+                    weight: W[j][i]
+                });
+            }
+        }
+
+        return { nodes, links };
+    }
+
+    
 }

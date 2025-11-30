@@ -16,7 +16,7 @@ const Graph = ({ nodes = [], links = [], nodeRadius = 12 }) => {
 
     // Groups for links and nodes
     const linkGroup = g.append("g").attr("stroke", "#999");
-    const nodeGroup = g.append("g").attr("stroke", "#fff").attr("stroke-width", 1.5);
+    const nodeGroup = g.append("g").attr("stroke", "#000000ff").attr("stroke-width", 1.5);
 
     const linkElements = linkGroup
       .selectAll("line")
@@ -31,53 +31,93 @@ const Graph = ({ nodes = [], links = [], nodeRadius = 12 }) => {
       .attr("r", nodeRadius)
       .attr("fill", d => d.color || "steelblue");
 
-    // Simulation
+    // Build list of layer ids (use node.layer when available)
+    const layerIds = Array.from(new Set(nodes.map(n => n.layer || n.id)));
+    const layerIndex = Object.fromEntries(layerIds.map((id, i) => [id, i]));
+
+    const columnWidth = Math.max(300, width / Math.max(1, layerIds.length)); // column spacing
+    const centerXForLayer = (id) => (layerIndex[id] + 0.5) * columnWidth;
+
+    // For each layer compute two sub-columns: 'in' and 'out'
+    const subOffset = Math.min(80, columnWidth * 0.38); // horizontal offset for in/out within layer
+    const layerX = {};
+    layerIds.forEach(id => {
+      const cx = centerXForLayer(id);
+      layerX[id] = {
+        in: cx - subOffset,
+        out: cx + subOffset
+      };
+    });
+
+    // Group nodes by (layer, role) so we can assign vertical slots independently
+    const nodesByLayerRole = {};
+    nodes.forEach(n => {
+      const lid = n.layer || n.id;
+      const role = (n.type === "output") ? "out" : "in";
+      const key = `${lid}::${role}`;
+      if (!nodesByLayerRole[key]) nodesByLayerRole[key] = [];
+      nodesByLayerRole[key].push(n);
+    });
+
+    // Compute vertical target (y) for each node based on its slot inside layer+role
+    const targetY = {};
+    Object.entries(nodesByLayerRole).forEach(([key, arr]) => {
+      // leave some padding top/bottom
+      const available = Math.max(60, height - 120);
+      const gap = available / Math.max(1, arr.length + 1);
+      arr.forEach((node, idx) => {
+        targetY[node.id] = 60 + (idx + 1) * gap;
+      });
+    });
+
+    // Simulation with lateral column/sub-column x force and per-node vertical targets
     const simulation = d3.forceSimulation(nodes)
-      .force("link", d3.forceLink(links).id(d => d.id).distance(120))
-      .force("charge", d3.forceManyBody().strength(-400))
+      .force("link", d3.forceLink(links).id(d => d.id).distance(220))
+      .force("charge", d3.forceManyBody().strength(-200))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .on("tick", ticked);
+      // x force: choose in/out sub-column within the layer
+      .force("x", d3.forceX(d => {
+        const lid = d.layer || d.id;
+        const role = (d.type === "output") ? "out" : "in";
+        return (layerX[lid] && layerX[lid][role]) || width / 2;
+      }).strength(0.5))
+      // y force: pull each node toward its vertical slot (per layer+role)
+      .force("y", d3.forceY(d => targetY[d.id] || height / 2).strength(0.9))
+      .force("collide", d3.forceCollide(nodeRadius + 6))
+      .on("tick", () => {
+        linkElements
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
 
-    nodeElements.call(drag());
+        nodeElements
+          .attr("cx", d => d.x)
+          .attr("cy", d => d.y);
+      });
 
-    function ticked() {
-      linkElements
-        .attr("x1", d => d.source.x)
-        .attr("y1", d => d.source.y)
-        .attr("x2", d => d.target.x)
-        .attr("y2", d => d.target.y);
-
-      nodeElements
-        .attr("cx", d => d.x)
-        .attr("cy", d => d.y);
-    }
-
-    function drag() {
-      function dragstarted(event, d) {
+    // drag behavior
+    nodeElements.call(d3.drag()
+      .on("start", (event, d) => {
         if (!event.active) simulation.alphaTarget(0.3).restart();
         d.fx = d.x;
         d.fy = d.y;
-      }
-
-      function dragged(event, d) {
+      })
+      .on("drag", (event, d) => {
         d.fx = event.x;
         d.fy = event.y;
-      }
-
-      function dragended(event, d) {
+      })
+      .on("end", (event, d) => {
         if (!event.active) simulation.alphaTarget(0);
         d.fx = null;
         d.fy = null;
-      }
+      })
+    );
 
-      return d3.drag()
-        .on("start", dragstarted)
-        .on("drag", dragged)
-        .on("end", dragended);
-    }
-
-    // Cleanup on unmount
-    return () => simulation.stop();
+    // cleanup on unmount
+    return () => {
+      simulation.stop();
+    };
   }, [nodes, links, nodeRadius]);
 
   return (

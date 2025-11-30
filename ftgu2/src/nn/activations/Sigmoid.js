@@ -43,20 +43,21 @@ export default class Sigmoid extends Activation {
     // output: Tensor, size (m, n)
     //          dL/dx
     //          "how sensitive the loss is to this layer's input"
-    backward(gradOutput) {
+    backward(gradOutputData) {
         // gradOutput = dL/dy
         // lastOutput = σ(x)
 
         // return dL/dy * σ′(x)
         
-        const gradInputData = this.lastOutput.data.map((row, i) => {
+        const gradInputData = this.lastOutput.data.map((row, i) =>
             row.map((y, j) => {
                 // take derivative of lastOutput[i][j]
                 const sigmoidGrad = y * (1 - y);
                 return gradOutputData[i][j] * sigmoidGrad;
             })
-        });
+        );
 
         return new Tensor(gradInputData)
     }
+
 }
