@@ -86,65 +86,57 @@ export default class DenseLayer extends Layer {
         return [this.dW, this.db];
     }
 
-    toGraph(idPrefix = "dense") {
-        const layerId = idPrefix; // use provided prefix exactly (Network expects this)
- 
+    toGraph({ idPrefix = "dense", inputIds = null } = {}) {
         const nodes = [];
         const links = [];
 
         const inputSize = this.W.data[0].length;
         const outputSize = this.W.data.length;
 
-        // Layer representative node (so Network can link layers by idPrefix)
-        // nodes.push({
-        //     id: layerId,
-        //     type: "layer",
-        //     label: `Dense ${inputSize}→${outputSize}`,
-        //     color: "#666"
-        // });
-
-        // Create input neuron nodes
-        const inputIds = [];
-        for (let i = 0; i < inputSize; i++) {
-            const nid = `${layerId}:in:${i}`;
-            inputIds.push(nid);
-            nodes.push({
-                id: nid,
-                type: "input",
-                layer: layerId,
-                label: `in${i}`,
-                color: "#1f77b4"
-            });
+        // If inputIds are provided (from previous layer) reuse them, otherwise create input nodes
+        let inIds = inputIds;
+        if (!inIds) {
+            inIds = [];
+            for (let i = 0; i < inputSize; i++) {
+                const nid = `${idPrefix}:in:${i}`;
+                inIds.push(nid);
+                nodes.push({
+                    id: nid,
+                    type: "input",
+                    layer: idPrefix,
+                    label: `in${i}`,
+                    color: "#1f77b4"
+                });
+            }
         }
 
-        // Create output neuron nodes
+        // Create output nodes (these will be passed to the next layer)
         const outputIds = [];
         for (let j = 0; j < outputSize; j++) {
-            const nid = `${layerId}:out:${j}`;
+            const nid = `${idPrefix}:out:${j}`;
             outputIds.push(nid);
             nodes.push({
                 id: nid,
                 type: "output",
-                layer: layerId,
+                layer: idPrefix,
                 label: `out${j}`,
-                color: "#ff7f0e"
+                color: "#1f77b4"
             });
         }
 
-        // Create weight edges from each input neuron to each output neuron
-        // include weight value for possible visual encoding
+        // Fully-connected edges from each input node to each output node
         const W = this.W.data;
         for (let j = 0; j < outputSize; j++) {
             for (let i = 0; i < inputSize; i++) {
                 links.push({
-                    source: inputIds[i],
+                    source: inIds[i],
                     target: outputIds[j],
                     weight: W[j][i]
                 });
             }
         }
 
-        return { nodes, links };
+        return { nodes, links, outputIds };
     }
 
     

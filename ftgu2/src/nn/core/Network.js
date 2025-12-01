@@ -47,18 +47,17 @@ export default class Network {
         const nodes = [];
         const links = [];
 
+        let prevOutputIds = null;
+
         this.layers.forEach((layer, i) => {
-            const g = layer.toGraph(`layer-${i}`);
+            const idPrefix = `layer-${i}`;
+            // Layer.toGraph now accepts an options object and returns { nodes, links, outputIds }
+            const g = layer.toGraph({ idPrefix, inputIds: prevOutputIds });
             nodes.push(...g.nodes);
             links.push(...g.links);
 
-            if (i > 0) {
-                links.push({
-                    source: `layer-${i-1}`,
-                    target: `layer-${i}`,
-                    color: "gray"
-                });
-            }
+            // next layer should receive these output ids as its inputIds
+            prevOutputIds = g.outputIds;
         });
 
         return { nodes, links };

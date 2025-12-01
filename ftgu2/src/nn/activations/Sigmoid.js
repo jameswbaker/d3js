@@ -60,17 +60,39 @@ export default class Sigmoid extends Activation {
         return new Tensor(gradInputData)
     }
 
-    toGraph(idPrefix = "sigmoid") {
+    toGraph({idPrefix = "sigmoid", inputIds = null} = {}) {
         const layerId = idPrefix; // use provided prefix exactly (Network expects this)
  
         const nodes = [];
         const links = [];
 
-        // TODO: the issue here is we have no access to W so we can't get the input/output Size
-        const inputSize = this.W.data[0].length;
-        const outputSize = this.W.data.length;
+        const outputIds = [];
 
-        return { nodes, links }
+        // For each input, create a sigmoid node and link from input
+        const numInputs = inputIds ? inputIds.length : 1;
+        for (let i = 0; i < numInputs; i++) {
+            const inId = inputIds ? inputIds[i] : `${layerId}-in${i}`;
+            const outId = `${layerId}-out${i}`;
+            
+            // Sigmoid node
+            nodes.push({
+                id: outId,
+                type: "activation",
+                layer: layerId,
+                label: "σ",
+                color: "#2ca02c"
+            });
+            
+            // Link from input to sigmoid node
+            links.push({
+                source: inId,
+                target: outId
+            });
+            
+            outputIds.push(outId);
+        }
+
+        return { nodes, links, outputIds }
     }
 
 }

@@ -8,7 +8,8 @@ function App() {
 
   const [net] = useState(() => {
     return new Network([
-      new DenseLayer(3,1),
+      new DenseLayer(3,2),
+      // new DenseLayer(1,1),
       new Sigmoid()
     ]);
   })

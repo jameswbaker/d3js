@@ -96,7 +96,7 @@ const Graph = ({ nodes = [], links = [], nodeRadius = 12 }) => {
         return (layerX[lid] && layerX[lid][role]) || width / 2;
       }).strength(0.5))
       // y force: pull each node toward its vertical slot (per layer+role)
-      .force("y", d3.forceY(d => targetY[d.id] || height / 2).strength(0.9))
+      .force("y", d3.forceY(d => targetY[d.id] || height / 2).strength(0.3))
       .force("collide", d3.forceCollide(nodeRadius + 6))
       .on("tick", () => {
         linkElements
